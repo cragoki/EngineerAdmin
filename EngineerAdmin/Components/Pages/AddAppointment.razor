@@ -1,0 +1,124 @@
+﻿@page "/add-appointment"
+
+@using EngineerAdmin.Clients
+@using EngineerAdmin.Components.FormComponents
+@using EngineerAdmin.Constants
+@using EngineerAdmin.ViewModels
+@using System.ComponentModel.DataAnnotations
+@inject ApiClient ApiClient
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Add Appointment</h2>
+    </div>
+
+    <div class="col-md-12">
+        <EditForm Model="model" OnValidSubmit="OnAddAppointment" FormName="AddAppointment">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <!--Looked at using ObjectDropdown.razor component, but couldn't get the model properties to bind, keeping this as a temporary solution-->
+                <label>Engineer</label>
+                <InputSelect @bind-Value="model.EngineerId" class="form-control">
+                    @if (engineers.Count == 0)
+                    {
+                        <option disabled>Loading...</option>
+                    }
+                    else
+                    {
+                        <option value="">Select Engineer</option>
+                        @foreach (var engineer in engineers)
+                        {
+                            <option value="@engineer.Id">@engineer.Name</option>
+                        }            
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => model.EngineerId)" />
+
+            </div>
+
+            <div class="mb-3">
+                <label>Location</label>
+                <InputSelect @bind-Value="model.LocationId" class="form-control">
+                    @if (locations == null)
+                    {
+                        <option disabled>Loading...</option>
+                    }
+                    else
+                    {
+                        <option value="">Select Location</option>
+                        @foreach (var location in locations)
+                        {
+                            <option value="@location.Id">@location.Name</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => model.LocationId)" />
+            </div>
+
+            <div class="mb-3">
+                <label>Date</label>
+                <InputDate @bind-Value="model.Date" class="form-control" />
+                <ValidationMessage For="@(() => model.Date)" />
+            </div>
+
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+            @if (!string.IsNullOrEmpty(validationMessage))
+            {
+                <div class="mt-mb-20 alert alert-danger">
+                    @validationMessage
+                </div>
+            }
+        </EditForm>
+    </div>
+</div>
+
+@code {
+
+    private AppointmentViewModel model = new AppointmentViewModel();
+    private List<EngineerViewModel> engineers = new List<EngineerViewModel>();
+    private List<LocationViewModel> locations = new List<LocationViewModel>();
+    private string validationMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        model.Date = DateTime.Now;
+        if (engineers.Count() == 0)
+        {
+            engineers = await ApiClient.GetAsync<List<EngineerViewModel>>(ApiEndpoints.GetEngineers);
+        }
+        if (locations.Count() == 0)
+        {
+            locations = await ApiClient.GetAsync<List<LocationViewModel>>(ApiEndpoints.GetLocations);
+        }
+    }
+
+    private async Task OnAddAppointment()
+    {
+        validationMessage = "";
+        try
+        {
+            if (model.EngineerId == 0 || model.LocationId == 0)
+            {
+                validationMessage = "Please ensure you have set an Engineer and Location";
+                return;
+            }
+
+            await ApiClient.PostNoResponseAsync<AppointmentViewModel>(ApiEndpoints.AddAppointment, model);
+
+            Navigation.NavigateTo("/manage-appointments");
+        }
+        catch (Exception ex)
+        {
+            validationMessage = ex.Message;
+        }
+    }
+}

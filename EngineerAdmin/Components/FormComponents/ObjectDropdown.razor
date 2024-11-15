@@ -1,0 +1,35 @@
+﻿@typeparam TItem
+@using System.Linq.Expressions
+
+<InputSelect class="form-control" @bind-Value="SelectedId" @onchange="OnChange">
+    @if (Items == null)
+    {
+        <option disabled>Loading...</option>
+    }
+    else
+    {
+        <option value="">Select Option</option>
+        @foreach (var item in Items)
+        {
+            <option value="@GetId(item)">@GetName(item)</option>
+        }
+    }
+</InputSelect>
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = new List<TItem>();
+    [Parameter] public int SelectedId { get; set; }
+    [Parameter] public EventCallback<int> SelectedIdChanged { get; set; }
+
+    [Parameter] public Expression<Func<TItem, int>> IdSelector { get; set; } 
+    [Parameter] public Expression<Func<TItem, string>> NameSelector { get; set; } 
+
+    private int GetId(TItem item) => IdSelector.Compile().Invoke(item);
+    private string GetName(TItem item) => NameSelector.Compile().Invoke(item);
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        SelectedId = Convert.ToInt32(e.Value);
+        await SelectedIdChanged.InvokeAsync(SelectedId); 
+    }
+}

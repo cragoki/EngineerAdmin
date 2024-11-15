@@ -1,0 +1,33 @@
+﻿@using EngineerAdmin.Clients
+@using EngineerAdmin.Constants
+@using EngineerAdmin.ViewModels
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject ApiClient ApiClient
+
+<div class="row">
+    <div class="mt-mb-20 col-md-12">
+        <NavLink class="nav-link" href="add-appointment">
+            <input type="button" class="btn btn-sm btn-info" value="Add Appointment" />
+        </NavLink>
+    </div>
+    <div class="col-md-12">
+        <QuickGrid Items="@appointments.AsQueryable()" ItemKey="x => x.Id" Class="table table-striped m-0">
+            <PropertyColumn Title="Date" Property="x => x.Date" Format="dd-MM-yyyy" Sortable="true" IsDefaultSortColumn="true"></PropertyColumn>
+            <PropertyColumn Title="Location" Property="x => x.LocationName" Sortable="true"></PropertyColumn>
+            <PropertyColumn Title="Engineer" Property="x => x.EngineerName" Sortable="true"></PropertyColumn>
+            <PropertyColumn Title="Status" Property="x => x.Status" Sortable="true"></PropertyColumn>
+        </QuickGrid>
+    </div>
+</div>
+
+@code {
+    private List<AppointmentViewModel> appointments = new List<AppointmentViewModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (appointments.Count() == 0)
+        {
+            appointments = await ApiClient.GetAsync<List<AppointmentViewModel>>(ApiEndpoints.GetAppointments);
+        }
+    }
+}
